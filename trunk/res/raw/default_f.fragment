@@ -1,0 +1,15 @@
+precision mediump float;
+
+//uniform sampler2D texture0;
+uniform vec3 lightPos;
+
+varying vec3 pos;
+varying vec2 tc;
+varying vec3 N;
+
+void main()
+{
+	vec4 color = vec4(N, 1.0); //texture2D(texture0, tc);
+	color.rgb = color.rgb * clamp(dot(normalize(N), normalize(lightPos-pos)), 0.0, 1.0 );
+	gl_FragColor = vec4(N,1.0);//color;
+}
