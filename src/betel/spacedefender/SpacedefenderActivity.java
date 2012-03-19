@@ -2,11 +2,13 @@ package betel.spacedefender;
 
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Random;
 import java.util.Set;
 
 import utils.GeometryLoader;
 import utils.ShaderLoader;
 import utils.StringLoader;
+import betel.alw3d.Alw3dOnSimulationListener;
 import betel.alw3d.Alw3dSimulation;
 import betel.alw3d.Alw3dSimulator;
 import betel.alw3d.Alw3dView;
@@ -26,13 +28,15 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnTouchListener;
 
-public class SpacedefenderActivity extends Activity implements OnTouchListener {
+public class SpacedefenderActivity extends Activity implements OnTouchListener, Alw3dOnSimulationListener {
 	
 	String LOG_TAG = "SDEFENDER";
 
 	private Model model;
 	private Alw3dView view;
 	
+	Random rand = new Random();
+		
 	/** Called when the activity is first created. */
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -81,14 +85,55 @@ public class SpacedefenderActivity extends Activity implements OnTouchListener {
         model.bulletMaterial = Material.DEFAULT;
         sphere.attach(model.gun);
         
+        model.ufoGeometry = sphereMesh;
+        model.ufoMaterial = Material.DEFAULT;
+        
         Set<Node> simNodes = new HashSet<Node>();
         simNodes.add(model.rootNode);
         Alw3dSimulator simulator = new Alw3dSimulator(simNodes);
     	simulator.setSimulation(new Alw3dSimulation(50));
+    	simulator.setOnSimulationListener(this);
     	model.setSimulator(simulator);
-    	Thread.yield();
+    	Thread.yield(); // TODO: Race condition?
     	simulator.start();
     }
+    
+    private void spawn() {
+	    synchronized(model.ufos) {
+			Iterator<Ufo> it = model.ufos.iterator();
+			while(it.hasNext()) {
+				Ufo ufo = it.next();
+				if(ufo.getTransform().getPosition().getLength() > 10)
+					ufo.reset();
+			}
+	    }
+	    
+	    Ufo ufo = null;
+		
+		synchronized(model.ufos) {
+			Iterator<Ufo> it2 = model.ufos.iterator();
+			while(it2.hasNext()) {
+				ufo = it2.next();
+				if(ufo.isInUse)
+					ufo = null;
+				else
+					break;
+			}
+		}
+		
+		if(ufo == null) {
+			ufo = new Ufo(model.ufoGeometry, model.ufoMaterial);
+			model.ufos.add(ufo);
+		}
+		
+		ufo.getTransform().getPosition().set(10f*(rand.nextFloat()-0.5f),10f,0f);
+		Vector3f speed = ufo.getMovement().getPosition();
+		ufo.getTransform().getScale().set(0.4f, 0.4f, 0.4f);
+		speed.set(0.1f*(rand.nextFloat()-0.5f), -0.1f*(rand.nextFloat()+0.1f), 0f);
+		
+		ufo.isInUse = true;
+		model.rootNode.attach(ufo);
+	}
     
     private void fire(long time) {
     	synchronized(model.bullets) {
@@ -133,6 +178,14 @@ public class SpacedefenderActivity extends Activity implements OnTouchListener {
 			bullet.isInUse = true;
 			model.rootNode.attach(bullet);
 		}
+    }
+    
+    @Override
+    public void onSimulationTick(long time) {
+    	if(time > model.timeForNextUfoSpawn) {
+    		model.timeForNextUfoSpawn = time + (long)(4000000000l * rand.nextFloat()); // nanoseconds
+    		spawn();
+    	}
     }
 
 	@Override
