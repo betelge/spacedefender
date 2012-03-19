@@ -14,6 +14,10 @@ public class Model extends Alw3dModel {
 	
 	public Geometry bulletGeometry;
 	public Material bulletMaterial;
+	public Geometry ufoGeometry;
+	public Material ufoMaterial;
+	
+	public long timeForNextUfoSpawn = 0;
 	
 	public Collection<Bullet> bullets = new HashSet<Bullet>();
 	Gun gun;
