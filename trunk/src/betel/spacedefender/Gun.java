@@ -1,11 +1,8 @@
 package betel.spacedefender;
 
-import android.text.AndroidCharacter;
 import betel.alw3d.math.Quaternion;
-import betel.alw3d.math.Vector3f;
 import betel.alw3d.renderer.Geometry;
 import betel.alw3d.renderer.Material;
-import betel.alw3d.renderer.MovableGeometryNode;
 import betel.alw3d.renderer.Node;
 
 public class Gun extends Node {

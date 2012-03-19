@@ -18,5 +18,7 @@ public class Model extends Alw3dModel {
 	public Collection<Bullet> bullets = new HashSet<Bullet>();
 	Gun gun;
 	
+	public Collection<Ufo> ufos = new HashSet<Ufo>();
+	
 	Node rootNode;
 }
