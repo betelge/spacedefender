@@ -12,6 +12,8 @@ import betel.alw3d.Alw3dOnSimulationListener;
 import betel.alw3d.Alw3dSimulation;
 import betel.alw3d.Alw3dSimulator;
 import betel.alw3d.Alw3dView;
+import betel.alw3d.SphereVolume;
+import betel.alw3d.Volume;
 import betel.alw3d.math.Vector3f;
 import betel.alw3d.renderer.CameraNode;
 import betel.alw3d.renderer.Geometry;
@@ -59,7 +61,7 @@ public class SpacedefenderActivity extends Activity implements OnTouchListener, 
         // Camera
         CameraNode cameraNode = new CameraNode(60f, 0, 0.1f, 1000f);
         model.rootNode.attach(cameraNode);
-        cameraNode.getTransform().setPosition(new Vector3f(0f,2f,10f));
+        cameraNode.getTransform().setPosition(new Vector3f(0f,4f,10f));
         
         // Sphere
         Geometry sphereMesh = GeometryLoader.loadObj(R.raw.sphere);
@@ -123,6 +125,7 @@ public class SpacedefenderActivity extends Activity implements OnTouchListener, 
 		
 		if(ufo == null) {
 			ufo = new Ufo(model.ufoGeometry, model.ufoMaterial);
+			ufo.setVolume(new SphereVolume(0.4f));
 			model.ufos.add(ufo);
 		}
 		
@@ -164,27 +167,47 @@ public class SpacedefenderActivity extends Activity implements OnTouchListener, 
 			
 			if(bullet == null) {
 				bullet = new Bullet(model.bulletGeometry, model.bulletMaterial);
+				bullet.setVolume(new SphereVolume(0.1f));
 				model.bullets.add(bullet);
 			}
 			
 			bullet.getTransform().getPosition().set(0f,0.5f,0f);
 			Vector3f speed = bullet.getMovement().getPosition();
-			bullet.getTransform().getScale().set(0.15f, 0.1f, 0.1f);
+			bullet.getTransform().getScale().set(0.1f, 0.1f, 0.1f);
 			speed.set(0f, 0.2f, 0f);
 			model.gun.getAim().mult(speed, speed);
 			
-			Log.d(LOG_TAG,"Bullet speed: " + speed + " Abs: " + speed.getLength());
+			//Log.d(LOG_TAG,"Bullet speed: " + speed + " Abs: " + speed.getLength());
 			
 			bullet.isInUse = true;
 			model.rootNode.attach(bullet);
 		}
     }
     
+    private Vector3f collisionPoint = new Vector3f();
     @Override
     public void onSimulationTick(long time) {
     	if(time > model.timeForNextUfoSpawn) {
     		model.timeForNextUfoSpawn = time + (long)(4000000000l * rand.nextFloat()); // nanoseconds
     		spawn();
+    	}
+    	
+    	// Check for bullet/ufo collisions.
+    	synchronized(model.ufos) {
+	    	for(Ufo ufo : model.ufos) {
+	    		synchronized(model.bullets) {
+		    		for(Bullet bullet : model.bullets) {
+		    			Volume v1 = bullet.getVolume();
+		    			Volume v2 = ufo.getVolume();
+		    			if(v1 != null && v2 != null && bullet.isInUse && ufo.isInUse) {
+			    			if(v1.isCollidedWith(v2, collisionPoint)) {
+			    				bullet.reset();
+			    				ufo.reset();
+			    			}
+		    			}
+		    		}
+	    		}
+	    	}
     	}
     }
 
@@ -199,7 +222,7 @@ public class SpacedefenderActivity extends Activity implements OnTouchListener, 
 				
 				model.gun.getAim().fromAngleNormalAxis(-(float)Math.atan2(xPos, yPos), Vector3f.UNIT_Z);
 
-				Log.d(LOG_TAG, "Action down: (" + xPos + "," + yPos + ")");
+				//Log.d(LOG_TAG, "Action down: (" + xPos + "," + yPos + ")");
 				fire(event.getEventTime());
 				return true;
 			}
@@ -210,7 +233,7 @@ public class SpacedefenderActivity extends Activity implements OnTouchListener, 
 				
 				model.gun.getAim().fromAngleNormalAxis(-(float)Math.atan2(xPos, yPos), Vector3f.UNIT_Z);
 
-				Log.d(LOG_TAG, "Action move: (" + xPos + "," + yPos + ")");
+				//Log.d(LOG_TAG, "Action move: (" + xPos + "," + yPos + ")");
 				fire(event.getEventTime());
 				return true;
 			}
