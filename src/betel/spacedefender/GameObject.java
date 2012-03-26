@@ -13,7 +13,7 @@ public class GameObject extends MovableGeometryNode {
 
 	public boolean isInUse = false;
 	
-	//public float mass = 1f;
+	public float mass = 1f;
 	//public boolean isExplosive = false;
 	//public float explosionPower = 10f;
 	

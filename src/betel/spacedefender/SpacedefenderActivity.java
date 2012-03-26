@@ -62,6 +62,16 @@ public class SpacedefenderActivity extends Activity implements OnTouchListener, 
         CameraNode cameraNode = new CameraNode(60f, 0, 0.1f, 1000f);
         model.rootNode.attach(cameraNode);
         cameraNode.getTransform().setPosition(new Vector3f(0f,4f,10f));
+        cameraNode.setVolume(cameraNode.generateFrustumVolume());
+        
+        // Make a kill frustum that's bigger then the camera frustum
+        model.killFrustum = cameraNode.generateFrustumVolume();
+        /*for(int i = 0; i < model.killFrustum.distances.length; i++) {
+        	//model.killFrustum.distances[i] -= 5;
+        	Log.d(LOG_TAG, "normals[" + i + "]: " + model.killFrustum.normals[i]);
+        	Log.d(LOG_TAG, "distances[" + i + "]: " + model.killFrustum.distances[i]);
+        }*/
+        cameraNode.attach(model.killFrustum);
         
         // Sphere
         Geometry sphereMesh = GeometryLoader.loadObj(R.raw.sphere);
@@ -168,7 +178,9 @@ public class SpacedefenderActivity extends Activity implements OnTouchListener, 
 			if(bullet == null) {
 				bullet = new Bullet(model.bulletGeometry, model.bulletMaterial);
 				bullet.setVolume(new SphereVolume(0.1f));
-				model.bullets.add(bullet);
+				synchronized(model.bullets) {
+					model.bullets.add(bullet);
+				}
 			}
 			
 			bullet.getTransform().getPosition().set(0f,0.5f,0f);
@@ -192,23 +204,96 @@ public class SpacedefenderActivity extends Activity implements OnTouchListener, 
     		spawn();
     	}
     	
+    	// Reset bullets that are far away 
+    	synchronized(model.bullets) {
+    		for(Bullet bullet : model.bullets) {
+    			if(!bullet.isInUse)
+	    			continue;
+    			
+    			if(!model.killFrustum.isCollidedWith(bullet.getVolume())) {
+    				Log.d(LOG_TAG, "Reseting bullet at position: " + bullet.getAbsoluteTransform().getPosition());
+	    			bullet.reset();
+	    			continue;
+	    		}
+    		}
+    	}
+    	
     	// Check for bullet/ufo collisions.
     	synchronized(model.ufos) {
 	    	for(Ufo ufo : model.ufos) {
+	    		if(!ufo.isInUse)
+	    			continue;
+	    		
+	    		if(!model.killFrustum.isCollidedWith(ufo.getVolume())) {
+	    			Log.d(LOG_TAG, "Reseting ufo at position: " + ufo.getAbsoluteTransform().getPosition());
+	    			ufo.reset();
+	    			continue;
+	    		}
+	    		
 	    		synchronized(model.bullets) {
 		    		for(Bullet bullet : model.bullets) {
+		    			if(!bullet.isInUse)
+			    			continue;
+		    			
 		    			Volume v1 = bullet.getVolume();
 		    			Volume v2 = ufo.getVolume();
 		    			if(v1 != null && v2 != null && bullet.isInUse && ufo.isInUse) {
 			    			if(v1.isCollidedWith(v2, collisionPoint)) {
-			    				bullet.reset();
-			    				ufo.reset();
+			    				/*bullet.reset();
+			    				ufo.reset();*/
+			    				
+			    				bounceBalls(bullet, ufo, collisionPoint, 0.6f);
 			    			}
 		    			}
 		    		}
 	    		}
 	    	}
     	}
+    }
+    
+    private final float SMALL_NUMBER = 0.001f;
+    private void bounceBalls(GameObject ball1, GameObject ball2, Vector3f collisionPoint, float C) {
+    	// collisionPoint is relative to the ball1 center.
+    	// It's also orthogonal to the collision plane.
+    	Vector3f normal = collisionPoint;
+    	normal.normalizeThis();
+    	
+    	/*Log.d(LOG_TAG, "Normal: " + normal + " ball1: " + ball1.getAbsoluteTransform().getPosition() +
+    			" ball2: " + ball2.getAbsoluteTransform().getPosition());
+    	*/
+    	
+    	// Move spheres out of each other if needed
+    	if(ball1.getVolume() instanceof SphereVolume && ball2.getVolume() instanceof SphereVolume) {
+	    	float distance = ball1.getAbsoluteTransform().getPosition().getDistance(
+	    						ball2.getAbsoluteTransform().getPosition());
+	    	
+	    	float overlap = -distance + ((SphereVolume)ball1.getVolume()).getRadius() +
+	    			((SphereVolume)ball2.getVolume()).getRadius() + SMALL_NUMBER;
+		    if(overlap >= 0) {
+			   	
+			   	// TODO: Only works if ball has root as parent
+			   	ball1.getTransform().getPosition().addMultThis(normal, -overlap*ball2.mass/(ball1.mass+ball2.mass));
+			   	ball2.getTransform().getPosition().addMultThis(normal, overlap*ball1.mass/(ball1.mass+ball2.mass));
+		    }
+    	}
+    	
+    	Vector3f b1Speed = ball1.getMovement().getPosition();
+    	Vector3f b2Speed = ball2.getMovement().getPosition();
+    	
+    	
+    	
+    	// Here we get the 1-dimensional case
+    	float u1 = b1Speed.dot(normal);
+    	float u2 = b2Speed.dot(normal);
+    	float m1 = ball1.mass;
+    	float m2 = ball2.mass;
+    	
+    	float v1 = (m1*u1 + m2*u2 + m2*C*(u2-u1))/(m1+m2);
+    	float v2 = (m1*u1 + m2*u2 + m1*C*(u1-u2))/(m1+m2);
+    	
+    	// Add the changes back to the velocities
+    	b1Speed.addMultThis(normal, v1-u1);
+    	b2Speed.addMultThis(normal, v2-u2);
     }
 
 	@Override

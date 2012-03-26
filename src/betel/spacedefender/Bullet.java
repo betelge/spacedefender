@@ -7,6 +7,8 @@ public class Bullet extends GameObject {
 
 	public Bullet(Geometry geometry, Material material) {
 		super(geometry, material);
+		
+		mass = 1f;
 	}
 	
 }
