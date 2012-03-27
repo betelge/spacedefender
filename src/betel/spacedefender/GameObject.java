@@ -1,5 +1,6 @@
 package betel.spacedefender;
 
+import betel.alw3d.math.Quaternion;
 import betel.alw3d.math.Vector3f;
 import betel.alw3d.renderer.Geometry;
 import betel.alw3d.renderer.Material;
@@ -18,10 +19,12 @@ public class GameObject extends MovableGeometryNode {
 	//public float explosionPower = 10f;
 	
 	public void reset() {
-		getTransform().getRotation().fromAngleNormalAxis(0f, Vector3f.UNIT_X);
+		getTransform().getRotation().set(Quaternion.UNIT);
 		getTransform().getPosition().multThis(0f);
-		getMovement().getRotation().fromAngleNormalAxis(0f, Vector3f.UNIT_X);
+		getMovement().getRotation().set(Quaternion.UNIT);
 		getMovement().getPosition().multThis(0f);
+		setLastTime(0);
+		setNextTime(0);
 		detachFromParent();
 		isInUse = false;
 	}

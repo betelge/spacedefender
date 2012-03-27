@@ -188,11 +188,6 @@ public class SpacedefenderActivity extends Activity implements OnTouchListener, 
 			bullet.getTransform().getScale().set(0.1f, 0.1f, 0.1f);
 			speed.set(0f, 0.2f, 0f);
 			model.gun.getAim().mult(speed, speed);
-
-			// This removes some flickering
-			bullet.getNextTransform().set(bullet.getTransform());
-			
-			//Log.d(LOG_TAG,"Bullet speed: " + speed + " Abs: " + speed.getLength());
 			
 			bullet.isInUse = true;
 			model.rootNode.attach(bullet);
