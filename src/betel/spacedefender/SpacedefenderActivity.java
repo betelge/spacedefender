@@ -255,7 +255,10 @@ public class SpacedefenderActivity extends Activity implements OnTouchListener, 
     private void bounceBalls(GameObject ball1, GameObject ball2, Vector3f collisionPoint, float C) {
     	// collisionPoint is relative to the ball1 center.
     	// It's also orthogonal to the collision plane.
-    	Vector3f normal = collisionPoint;
+    	Vector3f normal;// = collisionPoint;
+    	// TODO: Why was collisionPoint wrong?
+    	normal = ball2.getAbsoluteTransform().getPosition().sub(
+    			ball1.getAbsoluteTransform().getPosition());
     	normal.normalizeThis();
     	
     	/*Log.d(LOG_TAG, "Normal: " + normal + " ball1: " + ball1.getAbsoluteTransform().getPosition() +
