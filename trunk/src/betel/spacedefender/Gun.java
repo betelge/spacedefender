@@ -18,6 +18,8 @@ public class Gun extends Node {
 	long lastFired = 0;
 	long fireDelay;
 	
+	public boolean isTriggerPressed = false;
+	
 	/*private Runnable shootRunnable = new Runnable() {
 		@Override
 		public void run() {
@@ -29,11 +31,11 @@ public class Gun extends Node {
 	
 	Thread shootThread = new Thread(shootRunnable);*/
 	
-	Quaternion aim = new Quaternion();
+	//Quaternion aim = new Quaternion();
 	
-	Quaternion getAim() {
+	/*Quaternion getAim() {
 		return aim;
-	}
+	}*/
 	
 	long getLastFired() {
 		return lastFired;
