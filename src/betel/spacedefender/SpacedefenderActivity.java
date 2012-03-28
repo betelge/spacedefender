@@ -14,6 +14,7 @@ import betel.alw3d.Alw3dSimulator;
 import betel.alw3d.Alw3dView;
 import betel.alw3d.SphereVolume;
 import betel.alw3d.Volume;
+import betel.alw3d.math.Transform;
 import betel.alw3d.math.Vector3f;
 import betel.alw3d.renderer.CameraNode;
 import betel.alw3d.renderer.Geometry;
@@ -63,6 +64,7 @@ public class SpacedefenderActivity extends Activity implements OnTouchListener, 
         model.rootNode.attach(cameraNode);
         cameraNode.getTransform().setPosition(new Vector3f(0f,4f,10f));
         cameraNode.setVolume(cameraNode.generateFrustumVolume());
+        model.currentCameraNode = cameraNode;
         
         // Make a kill frustum that's bigger then the camera frustum
         model.killFrustum = cameraNode.generateFrustumVolume();
@@ -89,6 +91,11 @@ public class SpacedefenderActivity extends Activity implements OnTouchListener, 
         SceneRenderPass sceneRenderPass = new SceneRenderPass(model.rootNode, cameraNode);
     	model.addRenderPass(new ClearPass(ClearPass.COLOR_BUFFER_BIT | ClearPass.DEPTH_BUFFER_BIT, null));
         model.addRenderPass(sceneRenderPass);
+        
+        // testSphere
+        model.testSphere = new GeometryNode(sphereMesh, null);
+        model.testSphere.getTransform().getScale().multThis(0.5f);
+        model.rootNode.attach(model.testSphere);
         
         
         // Game
@@ -148,7 +155,7 @@ public class SpacedefenderActivity extends Activity implements OnTouchListener, 
 		model.rootNode.attach(ufo);
 	}
     
-    private void fire(long time) {
+    private void fire(long time) {    	
     	synchronized(model.bullets) {
 			Iterator<Bullet> it = model.bullets.iterator();
 			while(it.hasNext()) {
@@ -183,11 +190,13 @@ public class SpacedefenderActivity extends Activity implements OnTouchListener, 
 				}
 			}
 			
-			bullet.getTransform().getPosition().set(0f,0.5f,0f);
+			// TODO: separate gun from gun sphere
+			//bullet.getTransform().getPosition().set(0f,0.5f,0f);
 			Vector3f speed = bullet.getMovement().getPosition();
 			bullet.getTransform().getScale().set(0.1f, 0.1f, 0.1f);
 			speed.set(0f, 0.2f, 0f);
-			model.gun.getAim().mult(speed, speed);
+			//model.gun.getAim().mult(speed, speed);
+			model.gun.getTransform().getRotation().mult(speed, speed);
 			
 			bullet.isInUse = true;
 			model.rootNode.attach(bullet);
@@ -197,6 +206,13 @@ public class SpacedefenderActivity extends Activity implements OnTouchListener, 
     private Vector3f collisionPoint = new Vector3f();
     @Override
     public void onSimulationTick(long time) {
+    	
+    	// Fire gun
+    	if(model.gun.isTriggerPressed) {
+    		fire(time / 1000000); // Try firing gun, converting nanoseconds into milliseconds
+    	}
+    	
+    	// Spawn new ufos
     	if(time > model.timeForNextUfoSpawn) {
     		model.timeForNextUfoSpawn = time + (long)(4000000000l * rand.nextFloat()); // nanoseconds
     		spawn();
@@ -297,31 +313,58 @@ public class SpacedefenderActivity extends Activity implements OnTouchListener, 
     	b2Speed.addMultThis(normal, v2-u2);
     }
 
+    // TODO: Should this be thread safe?
+    private Vector3f rayDir = new Vector3f();
+    private Vector3f rayStart = new Vector3f();
 	@Override
 	public boolean onTouch(View v, MotionEvent event) {
 		if(v == view) {
 			int action = event.getAction();
-			if ( action == MotionEvent.ACTION_DOWN ) {
-				// TODO: Will only work with 800x480 resolutions!!!
-				float xPos = (event.getX() - 240) / 480;
-				float yPos = -(event.getY() - 500) / 800;
-				
-				model.gun.getAim().fromAngleNormalAxis(-(float)Math.atan2(xPos, yPos), Vector3f.UNIT_Z);
-
-				//Log.d(LOG_TAG, "Action down: (" + xPos + "," + yPos + ")");
-				fire(event.getEventTime());
-				return true;
+			
+			float w = model.getWidth();
+			float h = model.getHeight();
+			
+			rayDir.set( -(event.getX() - w/2) / h,
+						(event.getY() - h/2) / h,
+						0.5f*(float)Math.sin(Math.PI/2 - Math.PI/180*model.currentCameraNode.getFov()/2) /
+							(float) Math.sin(Math.PI/180*model.currentCameraNode.getFov()/2) );
+			
+			Transform cameraTransform = model.currentCameraNode.getAbsoluteTransform();
+			rayStart.set(cameraTransform.getPosition());
+			cameraTransform.getRotation().mult(rayDir, rayDir);
+			
+			rayStart.subThis(model.gun.getAbsoluteTransform().getPosition());
+			
+			float projection = rayDir.dot(Vector3f.UNIT_Z);
+			if(projection == 0) {
+				// Parallel to the plane
+				projection = 0.0000001f;
 			}
-			else if ( action == MotionEvent.ACTION_MOVE ) {
-				// TODO: Will only work with 800x480 resolutions!!!
-				float xPos = (event.getX() - 240) / 480;
-				float yPos = -(event.getY() - 400) / 800;
-				
-				model.gun.getAim().fromAngleNormalAxis(-(float)Math.atan2(xPos, yPos), Vector3f.UNIT_Z);
+			
+			float t = -rayStart.dot(Vector3f.UNIT_Z) / projection;
+			
+			// This is the 3D point intersection between the click and the 2D game plane.
+			rayDir.multThis(t);
+			rayDir.addThis(rayStart);
+			
+			// testSphere
+			model.testSphere.getTransform().getPosition().set(rayDir);
+			/*model.testSphere.getTransform().getPosition().addThis(
+					model.gun.getTransform().getPosition());*/
+			
+			rayDir.subThis(model.gun.getTransform().getPosition());
+							
+			if ( action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_MOVE ) {
+				//model.gun.getAim().fromAngleNormalAxis(-(float)Math.atan2(rayDir.x, rayDir.y), Vector3f.UNIT_Z);
+				model.gun.getTransform().getRotation().fromAngleNormalAxis(-(float)Math.atan2(rayDir.x, rayDir.y), Vector3f.UNIT_Z);
 
-				//Log.d(LOG_TAG, "Action move: (" + xPos + "," + yPos + ")");
+				model.gun.isTriggerPressed = true;
 				fire(event.getEventTime());
-				return true;
+			}
+			/*else if ( action == MotionEvent.ACTION_MOVE ) {
+			}*/
+			else if ( action == MotionEvent.ACTION_UP ) {
+				model.gun.isTriggerPressed = false;
 			}
 		}
 		return true;
