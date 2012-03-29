@@ -31,6 +31,4 @@ public class Model extends Alw3dModel {
 	
 	public FrustumVolume killFrustum;
 	public CameraNode currentCameraNode;
-	
-	public GeometryNode testSphere;
 }
