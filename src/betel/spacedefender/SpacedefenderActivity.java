@@ -92,12 +92,6 @@ public class SpacedefenderActivity extends Activity implements OnTouchListener, 
     	model.addRenderPass(new ClearPass(ClearPass.COLOR_BUFFER_BIT | ClearPass.DEPTH_BUFFER_BIT, null));
         model.addRenderPass(sceneRenderPass);
         
-        // testSphere
-        model.testSphere = new GeometryNode(sphereMesh, null);
-        model.testSphere.getTransform().getScale().multThis(0.5f);
-        model.rootNode.attach(model.testSphere);
-        
-        
         // Game
         model.gun = new Gun(sphereMesh, Material.DEFAULT, 100);
         model.bulletGeometry = sphereMesh;
@@ -225,7 +219,6 @@ public class SpacedefenderActivity extends Activity implements OnTouchListener, 
 	    			continue;
     			
     			if(!model.killFrustum.isCollidedWith(bullet.getVolume())) {
-    				Log.d(LOG_TAG, "Reseting bullet at position: " + bullet.getAbsoluteTransform().getPosition());
 	    			bullet.reset();
 	    			continue;
 	    		}
@@ -239,7 +232,6 @@ public class SpacedefenderActivity extends Activity implements OnTouchListener, 
 	    			continue;
 	    		
 	    		if(!model.killFrustum.isCollidedWith(ufo.getVolume())) {
-	    			Log.d(LOG_TAG, "Reseting ufo at position: " + ufo.getAbsoluteTransform().getPosition());
 	    			ufo.reset();
 	    			continue;
 	    		}
@@ -265,19 +257,17 @@ public class SpacedefenderActivity extends Activity implements OnTouchListener, 
     	}
     }
     
+    // TODO: not thread safe
+    private Vector3f normal = new Vector3f();
     private final float SMALL_NUMBER = 0.001f;
     private void bounceBalls(GameObject ball1, GameObject ball2, Vector3f collisionPoint, float C) {
     	// collisionPoint is relative to the ball1 center.
     	// It's also orthogonal to the collision plane.
-    	Vector3f normal;// = collisionPoint;
+    	//Vector3f normal;// = collisionPoint;
     	// TODO: Why was collisionPoint wrong?
-    	normal = ball2.getAbsoluteTransform().getPosition().sub(
-    			ball1.getAbsoluteTransform().getPosition());
+    	normal.set(ball2.getAbsoluteTransform().getPosition());
+    	normal.subThis(ball1.getAbsoluteTransform().getPosition());
     	normal.normalizeThis();
-    	
-    	/*Log.d(LOG_TAG, "Normal: " + normal + " ball1: " + ball1.getAbsoluteTransform().getPosition() +
-    			" ball2: " + ball2.getAbsoluteTransform().getPosition());
-    	*/
     	
     	// Move spheres out of each other if needed
     	if(ball1.getVolume() instanceof SphereVolume && ball2.getVolume() instanceof SphereVolume) {
@@ -345,18 +335,12 @@ public class SpacedefenderActivity extends Activity implements OnTouchListener, 
 			
 			// This is the 3D point intersection between the click and the 2D game plane.
 			rayDir.multThis(t);
-			rayDir.addThis(rayStart);
-			
-			// testSphere
-			model.testSphere.getTransform().getPosition().set(rayDir);
-			/*model.testSphere.getTransform().getPosition().addThis(
-					model.gun.getTransform().getPosition());*/
-			
+			rayDir.addThis(rayStart);			
 			rayDir.subThis(model.gun.getTransform().getPosition());
 							
 			if ( action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_MOVE ) {
-				//model.gun.getAim().fromAngleNormalAxis(-(float)Math.atan2(rayDir.x, rayDir.y), Vector3f.UNIT_Z);
-				model.gun.getTransform().getRotation().fromAngleNormalAxis(-(float)Math.atan2(rayDir.x, rayDir.y), Vector3f.UNIT_Z);
+				float angle = -(float)Math.atan2(rayDir.x, rayDir.y);
+				model.gun.getTransform().getRotation().fromAngleNormalAxis(angle, Vector3f.UNIT_Z);
 
 				model.gun.isTriggerPressed = true;
 				fire(event.getEventTime());
