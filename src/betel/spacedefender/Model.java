@@ -14,6 +14,8 @@ import betel.alw3d.renderer.Node;
 public class Model extends Alw3dModel {
 	public float spherePos = 0;
 	public float sphereRadius = 0.5f;
+	
+	public float bulletspeed = 0.4f;
 		
 	public Geometry bulletGeometry;
 	public Material bulletMaterial;

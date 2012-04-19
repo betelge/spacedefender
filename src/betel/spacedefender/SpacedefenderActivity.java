@@ -68,11 +68,9 @@ public class SpacedefenderActivity extends Activity implements OnTouchListener, 
         
         // Make a kill frustum that's bigger then the camera frustum
         model.killFrustum = cameraNode.generateFrustumVolume();
-        /*for(int i = 0; i < model.killFrustum.distances.length; i++) {
-        	//model.killFrustum.distances[i] -= 5;
-        	Log.d(LOG_TAG, "normals[" + i + "]: " + model.killFrustum.normals[i]);
-        	Log.d(LOG_TAG, "distances[" + i + "]: " + model.killFrustum.distances[i]);
-        }*/
+        for(int i = 0; i < model.killFrustum.distances.length; i++) {
+        	model.killFrustum.distances[i] -= 5;
+        }
         cameraNode.attach(model.killFrustum);
         
         // Sphere
@@ -112,15 +110,7 @@ public class SpacedefenderActivity extends Activity implements OnTouchListener, 
     }
     
     private void spawn() {
-	    synchronized(model.ufos) {
-			Iterator<Ufo> it = model.ufos.iterator();
-			while(it.hasNext()) {
-				Ufo ufo = it.next();
-				if(ufo.getTransform().getPosition().getLength() > 10)
-					ufo.reset();
-			}
-	    }
-	    
+	    	    
 	    Ufo ufo = null;
 		
 		synchronized(model.ufos) {
@@ -140,10 +130,21 @@ public class SpacedefenderActivity extends Activity implements OnTouchListener, 
 			model.ufos.add(ufo);
 		}
 		
-		ufo.getTransform().getPosition().set(10f*(rand.nextFloat()-0.5f),10f,0f);
+		float size = rand.nextFloat();
+		size *= size*size*size * 2;
+		size += 0.1;
+		
+		ufo.getTransform().getPosition().set(10f*(rand.nextFloat()-0.5f),10f+size,0f);
 		Vector3f speed = ufo.getMovement().getPosition();
-		ufo.getTransform().getScale().set(0.4f, 0.4f, 0.4f);
-		speed.set(0.1f*(rand.nextFloat()-0.5f), -0.1f*(rand.nextFloat()+0.1f), 0f);
+		ufo.getTransform().getScale().set(size, size, size);
+		
+		Volume v = ufo.getVolume();
+		if(v instanceof SphereVolume) {
+			((SphereVolume)v).setRadius(size);
+		}
+		
+		ufo.mass = 100*size*size;
+		speed.set(0.05f*(rand.nextFloat()-0.5f)/ ufo.mass*20, -0.1f*(rand.nextFloat()+0.1f)/ ufo.mass*20, 0f);
 		
 		ufo.isInUse = true;
 		model.rootNode.attach(ufo);
@@ -188,7 +189,8 @@ public class SpacedefenderActivity extends Activity implements OnTouchListener, 
 			//bullet.getTransform().getPosition().set(0f,0.5f,0f);
 			Vector3f speed = bullet.getMovement().getPosition();
 			bullet.getTransform().getScale().set(0.1f, 0.1f, 0.1f);
-			speed.set(0f, 0.2f, 0f);
+			speed.set(0f, model.bulletspeed, 0f);
+			bullet.mass = 0.4f;
 			//model.gun.getAim().mult(speed, speed);
 			model.gun.getTransform().getRotation().mult(speed, speed);
 			
@@ -225,17 +227,19 @@ public class SpacedefenderActivity extends Activity implements OnTouchListener, 
     		}
     	}
     	
-    	// Check for bullet/ufo collisions.
     	synchronized(model.ufos) {
 	    	for(Ufo ufo : model.ufos) {
 	    		if(!ufo.isInUse)
 	    			continue;
 	    		
 	    		if(!model.killFrustum.isCollidedWith(ufo.getVolume())) {
+	    			Log.d(LOG_TAG, "Resetting ufo at: " + ufo.getTransform().getPosition() + " with speed: " +
+	    					ufo.getMovement().getPosition());
 	    			ufo.reset();
 	    			continue;
 	    		}
 	    		
+	        	// Check for bullet/ufo collisions.
 	    		synchronized(model.bullets) {
 		    		for(Bullet bullet : model.bullets) {
 		    			if(!bullet.isInUse)
@@ -252,6 +256,20 @@ public class SpacedefenderActivity extends Activity implements OnTouchListener, 
 			    			}
 		    			}
 		    		}
+	    		}
+	    		
+	    		// check for ufo/ufo collisions.
+	    		for(Ufo ufo2 : model.ufos) {
+	    			if(!ufo2.isInUse || ufo == ufo2)
+	    				continue;
+	    			
+	    			Volume v1 = ufo.getVolume();
+	    			Volume v2 = ufo2.getVolume();
+	    			if(v1 != null & v2 != null) {
+	    				if(v1.isCollidedWith(v2, collisionPoint)) {
+	    					bounceBalls(ufo, ufo2, collisionPoint, 0.4f);
+	    				}
+	    			}
 	    		}
 	    	}
     	}
@@ -335,11 +353,13 @@ public class SpacedefenderActivity extends Activity implements OnTouchListener, 
 			
 			// This is the 3D point intersection between the click and the 2D game plane.
 			rayDir.multThis(t);
-			rayDir.addThis(rayStart);			
+			rayDir.addThis(rayStart);
 			rayDir.subThis(model.gun.getTransform().getPosition());
 							
 			if ( action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_MOVE ) {
 				float angle = -(float)Math.atan2(rayDir.x, rayDir.y);
+				// This would reverse the aim
+				//angle += (float)Math.PI;
 				model.gun.getTransform().getRotation().fromAngleNormalAxis(angle, Vector3f.UNIT_Z);
 
 				model.gun.isTriggerPressed = true;
