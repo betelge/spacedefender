@@ -132,7 +132,7 @@ public class SpacedefenderActivity extends Activity implements OnTouchListener, 
 		
 		float size = rand.nextFloat();
 		size *= size*size*size * 2;
-		size += 0.1;
+		size += 0.25;
 		
 		ufo.getTransform().getPosition().set(10f*(rand.nextFloat()-0.5f),10f+size,0f);
 		Vector3f speed = ufo.getMovement().getPosition();
@@ -144,7 +144,7 @@ public class SpacedefenderActivity extends Activity implements OnTouchListener, 
 		}
 		
 		ufo.mass = 100*size*size;
-		speed.set(0.05f*(rand.nextFloat()-0.5f)/ ufo.mass*20, -0.1f*(rand.nextFloat()+0.1f)/ ufo.mass*20, 0f);
+		speed.set(0.05f*(rand.nextFloat()-0.5f), -0.1f*(rand.nextFloat()+0.1f), 0f);
 		
 		ufo.isInUse = true;
 		model.rootNode.attach(ufo);
