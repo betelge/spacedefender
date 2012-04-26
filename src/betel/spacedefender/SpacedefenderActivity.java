@@ -26,6 +26,7 @@ import betel.alw3d.renderer.passes.ClearPass;
 import betel.alw3d.renderer.passes.SceneRenderPass;
 import android.app.Activity;
 import android.os.Bundle;
+import android.util.FloatMath;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
@@ -334,8 +335,8 @@ public class SpacedefenderActivity extends Activity implements OnTouchListener, 
 			
 			rayDir.set( -(event.getX() - w/2) / h,
 						(event.getY() - h/2) / h,
-						0.5f*(float)Math.sin(Math.PI/2 - Math.PI/180*model.currentCameraNode.getFov()/2) /
-							(float) Math.sin(Math.PI/180*model.currentCameraNode.getFov()/2) );
+						0.5f*FloatMath.sin((float)Math.PI/2 - (float)Math.PI/180*model.currentCameraNode.getFov()/2) /
+							FloatMath.sin((float)Math.PI/180*model.currentCameraNode.getFov()/2) );
 			
 			Transform cameraTransform = model.currentCameraNode.getAbsoluteTransform();
 			rayStart.set(cameraTransform.getPosition());
