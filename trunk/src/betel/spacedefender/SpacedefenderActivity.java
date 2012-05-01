@@ -82,7 +82,8 @@ public class SpacedefenderActivity extends Activity implements OnTouchListener, 
         model.rootNode.attach(sphere);
         
         // Plane
-        Geometry groundMesh = GeometryLoader.loadObj(R.raw.ground);
+        Geometry groundMesh = ProceduralGenerator.generateTerrain();
+		    //GeometryLoader.loadObj(R.raw.ground);
         GeometryNode ground = new GeometryNode(groundMesh, null);
         model.rootNode.attach(ground);
         ground.getTransform().getScale().multThis(3.5f);
