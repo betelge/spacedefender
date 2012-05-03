@@ -13,7 +13,7 @@ import betel.alw3d.renderer.Geometry.Attribute;
 
 public class ProceduralGenerator {
 	
-	static private final long seed = 1337l;
+	static private final long seed = 1336l;
 	static private final int size = 64;
 
 	static public Geometry generateTerrain() {
@@ -53,22 +53,24 @@ public class ProceduralGenerator {
 				
 				float gain = 0f;
 				Vector3f normal = new Vector3f();
+				float x = 0.2f*(-1f + 2f*i/(float)size) * (0.2f + 10f*(float)(size-j)/(float)size);
+				float y = (-1f + 2f*j/(float)size) * (0.1f + 3f*(float)(size-j)/(float)size);
 				float height = (1f + gain) * (float) fractal.getValueNormal(
-						(float)i/size, (float)j/size, 0, 1f/size, normal);
+						0.5f*x, 0.5f*y, 0, 1f/size, normal);
 				
 				normal.multThis(1f + gain);
 				
 				// Only use the 2D gradient
-				normal.y = 1;
+				normal.z = 1;
 				normal.normalizeThis();
 				
-				positions.put(-1f + 2f*i/size);
+				positions.put(x);
 				positions.put(height);
-				positions.put(-1f + 2f*j/size);
+				positions.put(y);
 				
-				normals.put(normal.x);
-				normals.put(normal.y);
+				normals.put(-normal.x);
 				normals.put(normal.z);
+				normals.put(-normal.y);
 			}
 		}
 		indices.flip();
