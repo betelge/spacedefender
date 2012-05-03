@@ -19,6 +19,7 @@ import betel.alw3d.math.Vector3f;
 import betel.alw3d.renderer.CameraNode;
 import betel.alw3d.renderer.Geometry;
 import betel.alw3d.renderer.GeometryNode;
+import betel.alw3d.renderer.Light;
 import betel.alw3d.renderer.Material;
 import betel.alw3d.renderer.Node;
 import betel.alw3d.renderer.ShaderProgram;
@@ -74,6 +75,11 @@ public class SpacedefenderActivity extends Activity implements OnTouchListener, 
         }
         cameraNode.attach(model.killFrustum);
         
+        // Light
+        Light light = new Light();
+        light.getTransform().getPosition().set(100, 100, 100);
+        model.rootNode.attach(light);
+        
         // Sphere
         Geometry sphereMesh = GeometryLoader.loadObj(R.raw.sphere);
         GeometryNode sphere = new GeometryNode(sphereMesh, null);
@@ -81,9 +87,8 @@ public class SpacedefenderActivity extends Activity implements OnTouchListener, 
         sphere.getTransform().getScale().multThis(2*model.sphereRadius);
         model.rootNode.attach(sphere);
         
-        // Plane
+        // Terrain
         Geometry groundMesh = ProceduralGenerator.generateTerrain();
-		    //GeometryLoader.loadObj(R.raw.ground);
         GeometryNode ground = new GeometryNode(groundMesh, null);
         model.rootNode.attach(ground);
         ground.getTransform().getScale().multThis(3.5f);
