@@ -6,6 +6,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import betel.alw3d.Alw3d;
+import betel.alw3d.math.Procedural;
 import betel.alw3d.math.Vector3f;
 import betel.alw3d.procedurals.fBm;
 import betel.alw3d.renderer.Geometry;
@@ -17,7 +18,7 @@ public class ProceduralGenerator {
 	static private final int size = 64;
 
 	static public Geometry generateTerrain() {
-		fBm fractal = new fBm(seed);
+		Procedural fractal = new TerrainProcedural(seed);
 		
 		IntBuffer indices = IntBuffer.allocate(size*size*6);
 		
@@ -53,7 +54,7 @@ public class ProceduralGenerator {
 				
 				float gain = 0f;
 				Vector3f normal = new Vector3f();
-				float x = 0.2f*(-1f + 2f*i/(float)size) * (0.2f + 10f*(float)(size-j)/(float)size);
+				float x = (-1f + 2f*i/(float)size) * (0.2f + 10f*(float)(size-j)/(float)size);
 				float y = (-1f + 2f*j/(float)size) * (0.1f + 3f*(float)(size-j)/(float)size);
 				float height = (1f + gain) * (float) fractal.getValueNormal(
 						0.5f*x, 0.5f*y, 0, 1f/size, normal);
