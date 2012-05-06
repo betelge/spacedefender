@@ -6,8 +6,8 @@ import java.util.LinkedList;
 import java.util.List;
 
 import betel.alw3d.Alw3d;
-import betel.alw3d.math.Procedural;
 import betel.alw3d.math.Vector3f;
+import betel.alw3d.procedurals.Procedural;
 import betel.alw3d.procedurals.fBm;
 import betel.alw3d.renderer.Geometry;
 import betel.alw3d.renderer.Geometry.Attribute;
