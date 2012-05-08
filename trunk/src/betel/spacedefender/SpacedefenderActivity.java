@@ -240,8 +240,6 @@ public class SpacedefenderActivity extends Activity implements OnTouchListener, 
 	    			continue;
 	    		
 	    		if(!model.killFrustum.isCollidedWith(ufo.getVolume())) {
-	    			Log.d(LOG_TAG, "Resetting ufo at: " + ufo.getTransform().getPosition() + " with speed: " +
-	    					ufo.getMovement().getPosition());
 	    			ufo.reset();
 	    			continue;
 	    		}
@@ -379,5 +377,17 @@ public class SpacedefenderActivity extends Activity implements OnTouchListener, 
 			}
 		}
 		return true;
+	}
+	
+	@Override
+	protected void onPause() {
+		super.onPause();
+		model.getSimulator().pause();
+	}
+	
+	@Override
+	protected void onResume() {
+		super.onResume();
+		model.getSimulator().resume();
 	}
 }
