@@ -11,14 +11,14 @@ public class TerrainProcedural implements Procedural {
 	private final long seed;
 	MultProcedural terrain;
 	
-	private final float a0 = 0.1f;
-	private final float a1 = 0.3f;
-	//private final float a2 = 0;
+	private final float a0 = 0.2f;
+	private final float a1 = 1f;
+	private final float a2 = 1.5f;
 	
 	public TerrainProcedural(long seed) {
 		this.seed = seed;
 		fBm hills = new fBm(seed);
-		TerrainWeightProcedural wProcedural = new TerrainWeightProcedural(a0, a1);
+		TerrainWeightProcedural wProcedural = new TerrainWeightProcedural(a0, a1, a2);
 		terrain = new MultProcedural(hills, wProcedural);
 	}
 
@@ -29,8 +29,8 @@ public class TerrainProcedural implements Procedural {
 
 	@Override
 	public double getValueNormal(double x, double y, double z,
-			double resolution, Vector3f normal) {
-		return terrain.getValueNormal(x, y, z, resolution, normal);
+			double resolution, Vector3f gradient) {
+		return terrain.getValueNormal(x, y, z, resolution, gradient);
 	}
 
 }
