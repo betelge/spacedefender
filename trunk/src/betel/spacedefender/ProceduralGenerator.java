@@ -1,7 +1,7 @@
 package betel.spacedefender;
 
 import java.nio.FloatBuffer;
-import java.nio.IntBuffer;
+import java.nio.ShortBuffer;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -20,7 +20,7 @@ public class ProceduralGenerator {
 	static public Geometry generateTerrain() {
 		Procedural fractal = new TerrainProcedural(seed);
 		
-		IntBuffer indices = IntBuffer.allocate(size*size*6);
+		ShortBuffer indices = ShortBuffer.allocate(size*size*6);
 		
 		Attribute atPosition = new Attribute();
 		atPosition.name = "position";
@@ -39,13 +39,13 @@ public class ProceduralGenerator {
 
 		for(int i = 0; i < size; i++) {
 			for(int j = 0; j < size; j++) {
-				indices.put(i*(size+1) + j);
-				indices.put(i*(size+1) + j + 1);
-				indices.put(i*(size+1) + j + size + 1);
+				indices.put((short) (i*(size+1) + j));
+				indices.put((short) (i*(size+1) + j + 1));
+				indices.put((short) (i*(size+1) + j + size + 1));
 				
-				indices.put(i*(size+1) + j + size + 1);
-				indices.put(i*(size+1) + j + 1);
-				indices.put(i*(size+1) + j + size + 2);
+				indices.put((short) (i*(size+1) + j + size + 1));
+				indices.put((short) (i*(size+1) + j + 1));
+				indices.put((short) (i*(size+1) + j + size + 2));
 			}
 		}
 		

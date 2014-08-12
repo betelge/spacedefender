@@ -21,7 +21,7 @@ public final class R {
         public static final int default_v=0x7f040001;
         public static final int direct_f=0x7f040002;
         public static final int direct_v=0x7f040003;
-        public static final int ground=0x7f040004;
+        public static final int plane=0x7f040004;
         public static final int sphere=0x7f040005;
     }
     public static final class string {
